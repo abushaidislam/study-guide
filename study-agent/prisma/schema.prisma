@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+}
+
+enum MessageRole {
+  user
+  assistant
+  system
+}
+
+model User {
+  id             String          @id @default(cuid())
+  name           String?
+  timezone       String?          @default("Asia/Dhaka")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  tasks          Task[]
+  subjects       Subject[]
+  scheduleBlocks ScheduleBlock[]
+  qaItems        QAItem[]
+  chatMessages   ChatMessage[]
+}
+
+model Subject {
+  id        String   @id @default(cuid())
+  name      String
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  tasks     Task[]
+  qaItems   QAItem[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Task {
+  id             String      @id @default(cuid())
+  title          String
+  description    String?
+  subjectId      String?
+  subject        Subject?    @relation(fields: [subjectId], references: [id])
+  userId         String?
+  user           User?       @relation(fields: [userId], references: [id])
+  dueDate        DateTime?
+  estimatedMin   Int?
+  priority       Int         @default(1)
+  status         TaskStatus  @default(PENDING)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  scheduleBlocks ScheduleBlock[]
+}
+
+model ScheduleBlock {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  taskId    String?
+  task      Task?    @relation(fields: [taskId], references: [id])
+  start     DateTime
+  end       DateTime
+  createdAt DateTime @default(now())
+}
+
+model QAItem {
+  id             String   @id @default(cuid())
+  userId         String?
+  user           User?    @relation(fields: [userId], references: [id])
+  subjectId      String?
+  subject        Subject? @relation(fields: [subjectId], references: [id])
+  question       String
+  answer         String?
+  sourceRef      String?
+  difficulty     Int      @default(1)
+  ef             Float    @default(2.5)
+  interval       Int      @default(0)
+  repetitions    Int      @default(0)
+  nextReviewAt   DateTime?
+  lastReviewedAt DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model ChatMessage {
+  id        String      @id @default(cuid())
+  userId    String?
+  user      User?       @relation(fields: [userId], references: [id])
+  role      MessageRole
+  content   String
+  createdAt DateTime    @default(now())
+}
